@@ -1,0 +1,52 @@
+📦 CẤU HÌNH TỐI THIỂU ĐỂ CHẠY ĐƯỢC
+
+✅ ESP32
+✅ DHT22
+✅ Cảm biến độ ẩm đất (capacitive)
+✅ Relay + bơm
+✅ Nguồn
+
+🌱 DANH SÁCH PHẦN CỨNG HOÀN CHỈNH (TỔNG)
+1️⃣ Bộ điều khiển
+
+   ESP32 Dev Module (ESP32-WROOM-32)
+
+2️⃣ Cảm biến môi trường
+
+   BME280 (nhiệt độ, độ ẩm, áp suất)
+
+   DHT22 (tùy chọn thay thế)
+
+   Capacitive Soil Moisture Sensor (độ ẩm đất)
+
+   BH1750 (ánh sáng)
+
+   LDR + điện trở 10k (tùy chọn)
+
+   Cảm biến mưa (tùy chọn)
+
+3️⃣ Cảm biến đất nâng cao (tùy chọn)
+
+   Cảm biến pH đất
+
+   Cảm biến EC / độ mặn
+
+   Cảm biến NPK
+
+4️⃣ Thiết bị điều khiển
+
+   Relay opto 1 kênh / 4 kênh / 8 kênh
+
+   Relay SSR (tùy chọn)
+
+   Bơm nước mini 12V
+
+   Van điện từ 12V
+
+   Flow Sensor YF-S201
+
+5️⃣ Thời gian & lưu trữ
+
+   RTC DS3231
+
+Module MicroSD + thẻ nhớ
