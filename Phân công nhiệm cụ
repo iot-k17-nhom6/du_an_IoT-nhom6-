@@ -1,1 +1,70 @@
 # du_an_IoT-nhom6-
+# 🌱 DỰ ÁN IOT – VƯỜN CÂY THÔNG MINH KẾT HỢP AI (NHÓM 6 – K17)
+
+## 👥 Thành viên & Phân công nhiệm vụ
+
+### 1️⃣ Lê Đức Nghĩa – Trưởng nhóm / Product Owner
+**Vai trò:** Quản lý dự án & tổng hợp  
+**Nhiệm vụ:**
+- Quản lý GitHub Organization và Repository
+- Quản lý tiến độ công việc trên Trello
+- Phân công nhiệm vụ cho các thành viên
+- Review code, tạo và merge Pull Request
+- Tổng hợp báo cáo cuối kỳ và chuẩn bị thuyết trình
+
+---
+
+### 2️⃣ Kiệt – Firmware Developer (ESP32 / Arduino)
+**Vai trò:** Lập trình nhúng  
+**Nhiệm vụ:**
+- Lập trình ESP32/Arduino
+- Đọc dữ liệu từ các cảm biến (DHT11, độ ẩm đất, ánh sáng)
+- Xử lý logic tưới nước tự động
+- Gửi dữ liệu cảm biến lên server / cloud
+
+---
+
+### 3️⃣ Kiên – Hardware Engineer (IoT – Điện tử)
+**Vai trò:** Phần cứng hệ thống  
+**Nhiệm vụ:**
+- Lắp ráp mạch ESP32 và các cảm biến
+- Kết nối relay, bơm nước, đèn chiếu sáng
+- Kiểm tra và sửa lỗi phần cứng
+- Đảm bảo hệ thống hoạt động ổn định
+
+---
+
+### 4️⃣ Nam – AI / Data Engineer
+**Vai trò:** Trí tuệ nhân tạo & xử lý dữ liệu  
+**Nhiệm vụ:**
+- Thu thập và tiền xử lý dữ liệu cảm biến
+- Xây dựng mô hình AI đơn giản
+- Phân tích dữ liệu để dự đoán nhu cầu tưới nước
+- Hỗ trợ tối ưu thuật toán điều khiển thông minh
+
+---
+
+### 5️⃣ Bình – Testing & Documentation
+**Vai trò:** Kiểm thử & báo cáo  
+**Nhiệm vụ:**
+- Kiểm thử toàn bộ hệ thống (phần cứng & phần mềm)
+- Phát hiện lỗi và đề xuất cải tiến
+- Viết báo cáo dự án
+- Chuẩn bị slide và tài liệu thuyết trình
+
+---
+
+## 🎯 Mục tiêu dự án
+Xây dựng hệ thống **vườn cây thông minh kết hợp AI** giúp:
+- Giám sát môi trường trồng cây theo thời gian thực
+- Tự động tưới nước thông minh, tiết kiệm tài nguyên
+- Ứng dụng AI để tối ưu việc chăm sóc cây trồng
+
+---
+
+## ⚙️ Công nghệ sử dụng
+- ESP32 / Arduino
+- Cảm biến: DHT11, độ ẩm đất, ánh sáng
+- Relay, bơm nước, đèn
+- Python (AI / Machine Learning)
+- GitHub (quản lý mã nguồn & làm việc nhóm)
