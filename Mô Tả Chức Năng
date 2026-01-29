@@ -1,1 +1,53 @@
+🌱 MÔ TẢ CHỨC NĂNG MÔ HÌNH
 
+Vườn thông minh kết hợp AI sử dụng ESP32
+
+1️⃣ Thu thập dữ liệu môi trường
+
+Đo độ ẩm đất
+
+Đo nhiệt độ và độ ẩm không khí
+
+Đo cường độ ánh sáng
+
+Thu thập dữ liệu theo thời gian thực
+
+2️⃣ Giám sát và hiển thị dữ liệu
+
+Hiển thị dữ liệu cảm biến trên Serial Monitor / Dashboard
+
+Theo dõi tình trạng cây trồng từ xa qua Internet
+
+Lưu trữ dữ liệu phục vụ phân tích
+
+3️⃣ Điều khiển tưới nước tự động
+
+Tự động bật/tắt bơm nước dựa trên ngưỡng độ ẩm đất
+
+Đảm bảo cây trồng được tưới nước đúng thời điểm
+
+Giảm lãng phí nước
+
+4️⃣ Điều khiển từ xa
+
+Người dùng có thể điều khiển hệ thống qua Web/App
+
+Bật/tắt bơm nước thủ công khi cần thiết
+
+Giám sát trạng thái thiết bị mọi lúc, mọi nơi
+
+5️⃣ Ứng dụng trí tuệ nhân tạo (AI)
+
+Phân tích dữ liệu môi trường đã thu thập
+
+Dự đoán nhu cầu tưới nước cho cây trồng
+
+Hỗ trợ ra quyết định tưới thông minh hơn so với ngưỡng cố định
+
+6️⃣ Hoạt động ổn định và mở rộng
+
+Hệ thống hoạt động liên tục và ổn định
+
+Có khả năng mở rộng thêm cảm biến và thiết bị
+
+Dễ nâng cấp thêm các chức năng AI nâng cao
