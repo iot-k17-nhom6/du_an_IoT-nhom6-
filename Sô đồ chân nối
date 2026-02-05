@@ -1,1 +1,25 @@
+| **Thiết bị**                | **Chân thiết bị** | **Chân ESP32** | **Ghi chú**         |
+| --------------------------- | ----------------- | -------------- | ------------------- |
+| **Nguồn**                   | VCC               | 3V3 / 5V       | Tùy thiết bị        |
+|                             | GND               | GND            | GND dùng chung      |
+| **Cảm biến độ ẩm đất**      | VCC               | 3V3            | Không dùng 5V       |
+|                             | GND               | GND            |                     |
+|                             | AO                | GPIO 34        | Analog              |
+| **Cảm biến DHT11 / DHT22**  | VCC               | 3V3            |                     |
+|                             | DATA              | GPIO 4         | Có điện trở 10k     |
+|                             | GND               | GND            |                     |
+| **Cảm biến ánh sáng (LDR)** | LDR 1             | 3V3            |                     |
+|                             | LDR 2             | GPIO 35        | Analog              |
+|                             | Điện trở 10kΩ     | GPIO35 → GND   | Mạch chia áp        |
+| **Relay 1 kênh (bơm nước)** | IN                | GPIO 26        | Tín hiệu điều khiển |
+|                             | VCC               | 5V             | Không dùng 3V3      |
+|                             | GND               | GND            |                     |
+| **Máy bơm nước**            | COM               | Relay COM      |                     |
+|                             | NO                | Relay NO       | Chỉ chạy khi ON     |
+| **LED (đèn trồng cây)**     | Anode (+)         | GPIO 27        | Qua R 220Ω          |
+|                             | Cathode (−)       | GND            |                     |
+| **OLED 0.96” (I2C)**        | VCC               | 3V3            |                     |
+|                             | GND               | GND            |                     |
+|                             | SDA               | GPIO 21        | I2C                 |
+|                             | SCL               | GPIO 22        | I2C                 |
 
