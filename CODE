@@ -1,82 +1,245 @@
 #include <WiFi.h>
+#include <PubSubClient.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include "DHT.h"
 
-// ===== WIFI =====
-const char* ssid = "YOUR_WIFI";
-const char* password = "YOUR_PASSWORD";
+// WIFI
+const char* ssid = "Tiem CaFe Pho Hoi 1989";
+const char* password = "phohoicamon";
 
-// ===== PIN =====
-#define SOIL_PIN   34
-#define RELAY_PIN  26
-#define DHT_PIN    27
+// MQTT
+const char* mqtt_server = "broker.emqx.io";
+WiFiClient espClient;
+PubSubClient client(espClient);
 
-#define DHTTYPE DHT22
-DHT dht(DHT_PIN, DHTTYPE);
+// OLED
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+Adafruit_SSD1306 display(128, 64, &Wire, -1);
 
-// ===== THAM SỐ =====
-int soilThreshold = 2000;     // Ngưỡng độ ẩm đất
-bool autoMode = true;        // true: tự động, false: thủ công
+// SENSOR
+#define DHTPIN 15
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
 
-void setup() {
-  Serial.begin(115200);
+#define SOIL_PIN 39
 
-  pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, HIGH); // Tắt bơm
+// RELAY
+#define PUMP 27
+#define FAN 14
 
-  dht.begin();
+// TRAFFIC LIGHT
+#define GREEN 26
+#define RED 25
+#define YELLOW 33
 
-  // Kết nối WiFi
+float temp = 0;
+int soilPercent = 0;
+
+// trạng thái thiết bị
+bool pumpState = false;
+bool fanState = false;
+bool greenState = true;
+bool redState = false;
+bool yellowState = false;
+
+// WIFI
+void setup_wifi() {
+
+  Serial.println("Dang ket noi WiFi...");
   WiFi.begin(ssid, password);
-  Serial.print("Connecting WiFi");
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("\nWiFi Connected");
+
+  Serial.println("");
+  Serial.println("WiFi Connected");
+}
+
+// MQTT nhận lệnh
+void callback(char* topic, byte* payload, unsigned int length) {
+
+  String msg;
+
+  for (int i = 0; i < length; i++) {
+    msg += (char)payload[i];
+  }
+
+  String t = String(topic);
+
+  Serial.println("Nhan lenh:");
+  Serial.println(t + " = " + msg);
+
+  if (t == "garden/pump") {
+
+    pumpState = msg == "1";
+    digitalWrite(PUMP, pumpState ? LOW : HIGH);
+
+    Serial.println(pumpState ? "Pump ON" : "Pump OFF");
+  }
+
+  if (t == "garden/fan") {
+
+    fanState = msg == "1";
+    digitalWrite(FAN, fanState ? LOW : HIGH);
+
+    Serial.println(fanState ? "Fan ON" : "Fan OFF");
+  }
+
+  if (t == "garden/green") {
+
+    greenState = msg == "1";
+    digitalWrite(GREEN, greenState);
+
+    Serial.println(greenState ? "Green ON" : "Green OFF");
+  }
+
+  if (t == "garden/red") {
+
+    redState = msg == "1";
+    digitalWrite(RED, redState);
+
+    Serial.println(redState ? "Red ON" : "Red OFF");
+  }
+
+  if (t == "garden/yellow") {
+
+    yellowState = msg == "1";
+    digitalWrite(YELLOW, yellowState);
+
+    Serial.println(yellowState ? "Yellow ON" : "Yellow OFF");
+  }
+}
+
+// MQTT reconnect
+void reconnect() {
+
+  while (!client.connected()) {
+
+    Serial.println("Dang ket noi MQTT...");
+
+    String clientId = "ESP32-Garden-";
+    clientId += String(random(0xffff), HEX);
+
+    if (client.connect(clientId.c_str())) {
+
+      Serial.println("MQTT Connected");
+
+      client.subscribe("garden/pump");
+      client.subscribe("garden/fan");
+      client.subscribe("garden/green");
+      client.subscribe("garden/red");
+      client.subscribe("garden/yellow");
+
+    } else {
+
+      Serial.println("MQTT Failed retry...");
+      delay(2000);
+    }
+  }
+}
+
+// OLED
+void updateOLED(){
+
+  display.clearDisplay();
+
+  display.setCursor(0,0);
+  display.println("SMART GARDEN");
+
+  display.setCursor(0,12);
+  display.print("Temp: ");
+  display.println(temp);
+
+  display.setCursor(0,22);
+  display.print("Soil: ");
+  display.println(soilPercent);
+
+  display.setCursor(0,34);
+  display.print("Pump: ");
+  display.println(pumpState ? "ON" : "OFF");
+
+  display.setCursor(0,44);
+  display.print("Fan: ");
+  display.println(fanState ? "ON" : "OFF");
+
+  display.setCursor(0,54);
+  display.print("G:");
+  display.print(greenState ? "1 " : "0 ");
+
+  display.print("R:");
+  display.print(redState ? "1 " : "0 ");
+
+  display.print("Y:");
+  display.print(yellowState ? "1" : "0");
+
+  display.display();
+}
+
+void setup() {
+
+  Serial.begin(115200);
+
+  Wire.begin(21,22);
+
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+
+  pinMode(PUMP, OUTPUT);
+  pinMode(FAN, OUTPUT);
+
+  pinMode(GREEN, OUTPUT);
+  pinMode(RED, OUTPUT);
+  pinMode(YELLOW, OUTPUT);
+
+  // mặc định
+  digitalWrite(PUMP, HIGH);
+  digitalWrite(FAN, HIGH);
+
+  digitalWrite(GREEN, HIGH);
+  digitalWrite(RED, LOW);
+  digitalWrite(YELLOW, LOW);
+
+  dht.begin();
+
+  setup_wifi();
+
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
 }
 
 void loop() {
-  // ===== ĐỌC CẢM BIẾN =====
-  int soilValue = analogRead(SOIL_PIN);
-  float humidity = dht.readHumidity();
-  float temperature = dht.readTemperature();
 
-  // Kiểm tra lỗi
-  if (isnan(humidity) || isnan(temperature)) {
-    Serial.println("Failed to read DHT sensor!");
-    return;
+  if (!client.connected()) {
+    reconnect();
   }
 
-  // ===== HIỂN THỊ =====
-  Serial.println("----- SENSOR DATA -----");
-  Serial.print("Soil moisture: ");
-  Serial.println(soilValue);
-  Serial.print("Air humidity: ");
-  Serial.print(humidity);
-  Serial.println(" %");
-  Serial.print("Temperature: ");
-  Serial.print(temperature);
-  Serial.println(" *C");
+  client.loop();
 
-  // ===== TƯỚI NƯỚC =====
-  if (autoMode) {
-    if (soilValue > soilThreshold) {
-      pumpOn();
-    } else {
-      pumpOff();
-    }
-  }
+  float t = dht.readTemperature();
 
-  delay(5000);
-}
+  if (!isnan(t)) temp = t;
 
-// ===== HÀM ĐIỀU KHIỂN =====
-void pumpOn() {
-  digitalWrite(RELAY_PIN, LOW);
-  Serial.println("Pump ON");
-}
+  int soilRaw = analogRead(SOIL_PIN);
+  soilPercent = map(soilRaw,4095,0,0,100);
 
-void pumpOff() {
-  digitalWrite(RELAY_PIN, HIGH);
-  Serial.println("Pump OFF");
+  // gửi MQTT
+  client.publish("garden/temp", String(temp).c_str());
+  client.publish("garden/soil", String(soilPercent).c_str());
+
+  // serial
+  Serial.print("Temp: ");
+  Serial.println(temp);
+
+  Serial.print("Soil: ");
+  Serial.println(soilPercent);
+
+  updateOLED();
+
+  delay(3000);
 }
