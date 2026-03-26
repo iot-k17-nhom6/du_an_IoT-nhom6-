@@ -4,188 +4,151 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "DHT.h"
+#include <ArduinoJson.h>
 
-// WIFI
-const char* ssid = "Tiem CaFe Pho Hoi 1989";
-const char* password = "phohoicamon";
+// ===== WIFI =====
+const char* ssid = "iPhone";
+const char* password = "Nanongunguoi123@";
 
-// MQTT
+// ===== MQTT =====
 const char* mqtt_server = "broker.emqx.io";
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-// OLED
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
+// ===== OLED =====
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 
-// SENSOR
+// ===== DHT =====
 #define DHTPIN 15
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
+// ===== SENSOR =====
 #define SOIL_PIN 39
+#define LDR_PIN 34
 
-// RELAY
+// ===== RELAY =====
 #define PUMP 27
 #define FAN 14
 
-// TRAFFIC LIGHT
+// ===== LED =====
 #define GREEN 26
 #define RED 25
 #define YELLOW 33
 
+// ===== BUZZER =====
+#define BUZZER 12
+
 float temp = 0;
 int soilPercent = 0;
+int lightValue = 0;
 
-// trạng thái thiết bị
-bool pumpState = false;
-bool fanState = false;
-bool greenState = true;
-bool redState = false;
-bool yellowState = false;
+// ===== MODE =====
+String mode = "auto";
 
-// WIFI
+bool mqttOK = false;
+
+// ===== SETUP WIFI =====
 void setup_wifi() {
-
-  Serial.println("Dang ket noi WiFi...");
   WiFi.begin(ssid, password);
-
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-
-  Serial.println("");
-  Serial.println("WiFi Connected");
+  Serial.println("\nWiFi connected");
 }
 
-// MQTT nhận lệnh
+// ===== MQTT CALLBACK =====
 void callback(char* topic, byte* payload, unsigned int length) {
 
-  String msg;
-
+  String msg = "";
   for (int i = 0; i < length; i++) {
     msg += (char)payload[i];
   }
 
   String t = String(topic);
+  Serial.println(t + " -> " + msg);
 
-  Serial.println("Nhan lenh:");
-  Serial.println(t + " = " + msg);
-
-  if (t == "garden/pump") {
-
-    pumpState = msg == "1";
-    digitalWrite(PUMP, pumpState ? LOW : HIGH);
-
-    Serial.println(pumpState ? "Pump ON" : "Pump OFF");
+  // ===== MODE =====
+  if (t == "garden/mode") {
+    mode = msg;
   }
 
-  if (t == "garden/fan") {
+  // ===== MANUAL MODE =====
+  if (mode == "manual") {
 
-    fanState = msg == "1";
-    digitalWrite(FAN, fanState ? LOW : HIGH);
+    if (t == "garden/pump") {
+      digitalWrite(PUMP, msg == "1" ? LOW : HIGH);
+    }
 
-    Serial.println(fanState ? "Fan ON" : "Fan OFF");
-  }
+    if (t == "garden/fan") {
+      digitalWrite(FAN, msg == "1" ? LOW : HIGH);
+    }
 
-  if (t == "garden/green") {
+    if (t == "garden/led_green") {
+      digitalWrite(GREEN, msg == "1" ? HIGH : LOW);
+    }
 
-    greenState = msg == "1";
-    digitalWrite(GREEN, greenState);
+    if (t == "garden/led_red") {
+      digitalWrite(RED, msg == "1" ? HIGH : LOW);
+    }
 
-    Serial.println(greenState ? "Green ON" : "Green OFF");
-  }
+    if (t == "garden/led_yellow") {
+      digitalWrite(YELLOW, msg == "1" ? HIGH : LOW);
+    }
 
-  if (t == "garden/red") {
-
-    redState = msg == "1";
-    digitalWrite(RED, redState);
-
-    Serial.println(redState ? "Red ON" : "Red OFF");
-  }
-
-  if (t == "garden/yellow") {
-
-    yellowState = msg == "1";
-    digitalWrite(YELLOW, yellowState);
-
-    Serial.println(yellowState ? "Yellow ON" : "Yellow OFF");
+    if (t == "garden/buzzer") {
+      digitalWrite(BUZZER, msg == "1" ? HIGH : LOW);
+    }
   }
 }
 
-// MQTT reconnect
+// ===== MQTT RECONNECT =====
 void reconnect() {
-
   while (!client.connected()) {
-
-    Serial.println("Dang ket noi MQTT...");
-
-    String clientId = "ESP32-Garden-";
-    clientId += String(random(0xffff), HEX);
-
+    String clientId = "ESP32-" + String(random(0xffff), HEX);
     if (client.connect(clientId.c_str())) {
-
-      Serial.println("MQTT Connected");
+      mqttOK = true;
 
       client.subscribe("garden/pump");
       client.subscribe("garden/fan");
-      client.subscribe("garden/green");
-      client.subscribe("garden/red");
-      client.subscribe("garden/yellow");
+      client.subscribe("garden/mode");
+
+      client.subscribe("garden/led_green");
+      client.subscribe("garden/led_red");
+      client.subscribe("garden/led_yellow");
+
+      client.subscribe("garden/buzzer");
 
     } else {
-
-      Serial.println("MQTT Failed retry...");
+      mqttOK = false;
       delay(2000);
     }
   }
 }
 
-// OLED
-void updateOLED(){
+// ===== SEND JSON SENSOR DATA =====
+void sendSensorJSON() {
+  StaticJsonDocument<200> doc;
+  doc["temp"] = temp;
+  doc["soil"] = soilPercent;
+  doc["light"] = lightValue;
 
-  display.clearDisplay();
+  char buffer[256];
+  serializeJson(doc, buffer);
 
-  display.setCursor(0,0);
-  display.println("SMART GARDEN");
+  // Gửi lên MQTT
+  client.publish("garden/sensor", buffer);
 
-  display.setCursor(0,12);
-  display.print("Temp: ");
-  display.println(temp);
-
-  display.setCursor(0,22);
-  display.print("Soil: ");
-  display.println(soilPercent);
-
-  display.setCursor(0,34);
-  display.print("Pump: ");
-  display.println(pumpState ? "ON" : "OFF");
-
-  display.setCursor(0,44);
-  display.print("Fan: ");
-  display.println(fanState ? "ON" : "OFF");
-
-  display.setCursor(0,54);
-  display.print("G:");
-  display.print(greenState ? "1 " : "0 ");
-
-  display.print("R:");
-  display.print(redState ? "1 " : "0 ");
-
-  display.print("Y:");
-  display.print(yellowState ? "1" : "0");
-
-  display.display();
+  // Hiển thị trên Serial
+  Serial.println(buffer);
 }
 
+// ===== SETUP =====
 void setup() {
 
   Serial.begin(115200);
-
-  Wire.begin(21,22);
-
+  Wire.begin(21, 22);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.setTextSize(1);
   display.setTextColor(WHITE);
@@ -197,49 +160,92 @@ void setup() {
   pinMode(RED, OUTPUT);
   pinMode(YELLOW, OUTPUT);
 
-  // mặc định
+  pinMode(BUZZER, OUTPUT);
+
   digitalWrite(PUMP, HIGH);
   digitalWrite(FAN, HIGH);
-
-  digitalWrite(GREEN, HIGH);
-  digitalWrite(RED, LOW);
-  digitalWrite(YELLOW, LOW);
+  digitalWrite(BUZZER, LOW);
 
   dht.begin();
-
   setup_wifi();
 
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
 }
 
+// ===== LOOP =====
 void loop() {
 
   if (!client.connected()) {
     reconnect();
   }
-
   client.loop();
 
+  // ===== READ SENSOR =====
   float t = dht.readTemperature();
-
   if (!isnan(t)) temp = t;
 
   int soilRaw = analogRead(SOIL_PIN);
-  soilPercent = map(soilRaw,4095,0,0,100);
+  soilPercent = map(soilRaw, 4095, 0, 0, 100);
 
-  // gửi MQTT
-  client.publish("garden/temp", String(temp).c_str());
-  client.publish("garden/soil", String(soilPercent).c_str());
+  lightValue = analogRead(LDR_PIN);
 
-  // serial
-  Serial.print("Temp: ");
-  Serial.println(temp);
+  // ===== AUTO MODE =====
+  if (mode == "auto") {
 
-  Serial.print("Soil: ");
-  Serial.println(soilPercent);
+    // Pump auto
+    if (soilPercent < 40) digitalWrite(PUMP, LOW);
+    else digitalWrite(PUMP, HIGH);
 
-  updateOLED();
+    // Fan auto
+    if (temp > 32) digitalWrite(FAN, LOW);
+    else digitalWrite(FAN, HIGH);
 
-  delay(3000);
+    // LED logic
+    if (temp >= 90 || soilPercent <= 10) { // RED
+      digitalWrite(RED, HIGH);
+      digitalWrite(GREEN, LOW);
+    } else if (temp <= 50 && soilPercent >= 50) { // GREEN
+      digitalWrite(GREEN, HIGH);
+      digitalWrite(RED, LOW);
+    } else { // OTHER
+      digitalWrite(GREEN, LOW);
+      digitalWrite(RED, LOW);
+    }
+
+    // YELLOW LED
+    if (lightValue > 3500) digitalWrite(YELLOW, HIGH);
+    else digitalWrite(YELLOW, LOW);
+
+    // BUZZER
+    if (temp > 50 || soilPercent < 20) digitalWrite(BUZZER, HIGH);
+    else digitalWrite(BUZZER, LOW);
+  }
+
+  // ===== SEND JSON =====
+  sendSensorJSON();
+
+  // ===== OLED =====
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println("SMART GARDEN");
+
+  display.setCursor(0, 12);
+  display.print("Temp: "); display.println(temp);
+
+  display.setCursor(0, 22);
+  display.print("Soil: "); display.println(soilPercent);
+
+  display.setCursor(0, 32);
+  display.print("Light: "); display.println(lightValue);
+
+  display.setCursor(0, 44);
+  display.print("Mode: "); display.println(mode);
+
+  display.setCursor(0, 54);
+  display.println(mqttOK ? "MQTT OK" : "MQTT WAIT");
+
+  display.display();
+
+  delay(2000);
 }
